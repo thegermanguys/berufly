@@ -1,0 +1,197 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #161a22;
+  --ink-soft: #4a5160;
+  --paper: #eef0ea;
+  --surface: #ffffff;
+  --surface-2: #f7f7f3;
+  --brass: #ad7d34;
+  --brass-ink: #7a581f;
+  --teal: #1f4a45;
+  --teal-ink: #123330;
+  --rust: #8f3f2e;
+  --line: rgba(22, 26, 34, 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #edefea;
+    --ink-soft: #b7bcc6;
+    --paper: #12151b;
+    --surface: #1a1f27;
+    --surface-2: #20262f;
+    --brass: #d9a85c;
+    --brass-ink: #f0c583;
+    --teal: #5fa79e;
+    --teal-ink: #8fcbc2;
+    --rust: #d98b78;
+    --line: rgba(237, 239, 234, 0.16);
+  }
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn-brass {
+  background: var(--brass);
+  color: #fff;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.btn-danger {
+  background: transparent;
+  color: var(--rust);
+  border-color: var(--rust);
+}
+.btn-sm {
+  padding: 7px 12px;
+  font-size: 12.5px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 22px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.pill-pending,
+.pill-submitted,
+.pill-under_review,
+.pill-open,
+.pill-reviewing {
+  color: var(--brass-ink);
+}
+.pill-approved,
+.pill-shortlisted,
+.pill-interview_invited,
+.pill-interview_completed,
+.pill-offer,
+.pill-accepted,
+.pill-answered,
+.pill-fulfilled,
+.pill-course_created,
+.pill-enrolled {
+  color: var(--teal-ink);
+}
+.pill-rejected,
+.pill-needs_changes,
+.pill-suspended {
+  color: var(--rust);
+}
+.pill-closed,
+.pill-archived,
+.pill-withdrawn {
+  color: var(--ink-soft);
+}
+.pill-strong {
+  color: var(--teal-ink);
+}
+.pill-partial {
+  color: var(--brass-ink);
+}
+.pill-limited,
+.pill-unknown {
+  color: var(--ink-soft);
+}
+
+.field label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--ink-soft);
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+}
+.field textarea {
+  min-height: 88px;
+}
+
+.tab {
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  border-bottom: 2px solid transparent;
+}
+.tab.active {
+  color: var(--ink);
+  border-color: var(--brass);
+}
+
+.banner-ok {
+  background: color-mix(in srgb, var(--teal) 12%, var(--surface));
+  border: 1px solid var(--teal);
+  color: var(--teal-ink);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  margin-bottom: 16px;
+}
+.banner-err {
+  background: color-mix(in srgb, var(--rust) 12%, var(--surface));
+  border: 1px solid var(--rust);
+  color: var(--rust);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  margin-bottom: 16px;
+}

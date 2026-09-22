@@ -1,0 +1,341 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------
+// Auth (NextAuth Prisma Adapter shape) + core User/role
+// ---------------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  COMPANY
+  EDUCATOR
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // null for OAuth-only accounts
+  role          Role?
+  createdAt     DateTime  @default(now())
+
+  accounts Account[]
+  sessions Session[]
+
+  candidateProfile CandidateProfile?
+  company          Company?
+  educatorProfile  EducatorProfile?
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------
+// Shared approval status (companies, vacancies, courses)
+// ---------------------------------------------------------------------
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_CHANGES
+  SUSPENDED
+  ARCHIVED
+  CLOSED
+}
+
+// ---------------------------------------------------------------------
+// Candidate side
+// ---------------------------------------------------------------------
+
+model CandidateProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city               String?
+  targetRegion       String?
+  educationLevel     String?
+  fieldOfStudy       String?
+  germanLevel        String? // A1..C2
+  otherLanguages     String?
+  desiredOccupation  String?
+  preferredIndustries String?
+  preferredLocations String?
+  availability       String?
+  experienceSummary  String?
+  skills             String? // comma-separated
+  cvUrl              String?
+  cvFileName         String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  applications       Application[]
+  courseEnrollments  CourseEnrollment[]
+  guidanceRequests   GuidanceRequest[]
+}
+
+// ---------------------------------------------------------------------
+// Company side
+// ---------------------------------------------------------------------
+
+model Company {
+  id          String         @id @default(cuid())
+  userId      String         @unique
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String?
+  industry    String?
+  locations   String?
+  website     String?
+  description String?
+  status      ApprovalStatus @default(PENDING)
+  reviewNote  String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  vacancies        Vacancy[]
+  trainingRequests TrainingRequest[]
+}
+
+enum VacancyType {
+  JOB
+  AUSBILDUNG
+  INTERNSHIP
+  TRAINEE
+  OTHER
+}
+
+model Vacancy {
+  id                 String         @id @default(cuid())
+  companyId          String
+  company            Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title              String
+  type               VacancyType    @default(JOB)
+  occupation         String?
+  industry           String?
+  location           String?
+  workingModel       String?
+  startDate          String?
+  deadline           String?
+  germanLevel        String?
+  otherLanguages     String?
+  education          String?
+  skills             String?
+  experienceLevel    String?
+  salary             String?
+  hours              String?
+  benefits           String?
+  description        String?
+  requiredDocuments  String?
+  positions          String?
+  trainingAvailable  Boolean        @default(false)
+  status             ApprovalStatus @default(PENDING)
+  reviewNote         String?
+  reviewedBy         String?
+  reviewedAt         DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  applications      Application[]
+  trainingRequests  TrainingRequest[]
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  SHORTLISTED
+  INTERVIEW_INVITED
+  INTERVIEW_COMPLETED
+  OFFER
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+  CLOSED
+}
+
+model Application {
+  id            String            @id @default(cuid())
+  vacancyId     String
+  vacancy       Vacancy           @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  candidateId   String
+  candidate     CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  message       String?
+  status        ApplicationStatus @default(SUBMITTED)
+  statusHistory Json              @default("[]")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([vacancyId, candidateId])
+}
+
+// ---------------------------------------------------------------------
+// Educator / training side
+// ---------------------------------------------------------------------
+
+model EducatorProfile {
+  id          String         @id @default(cuid())
+  userId      String         @unique
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String?
+  specialties String?
+  bio         String?
+  status      ApprovalStatus @default(PENDING)
+  reviewNote  String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  courses Course[]
+}
+
+enum CourseCategory {
+  GERMAN_LANGUAGE
+  OCCUPATION_GERMAN
+  PROFESSIONAL_SKILLS
+  WORKPLACE_CULTURE
+  CV_INTERVIEW_PREP
+  AUSBILDUNG_PREP
+  INTEGRATION_ORIENTATION
+  COMPANY_SPECIFIC
+}
+
+enum CourseFormat {
+  ONLINE
+  OFFLINE
+  HYBRID
+}
+
+model Course {
+  id             String         @id @default(cuid())
+  instructorId   String
+  instructor     EducatorProfile @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  title          String
+  category       CourseCategory @default(GERMAN_LANGUAGE)
+  language       String?
+  cefrLevel      String?
+  institutionName String?
+  schedule       String?
+  duration       String?
+  capacity       String?
+  free           Boolean        @default(false)
+  priceAmount    String?
+  format         CourseFormat   @default(OFFLINE)
+  location       String?
+  prerequisites  String?
+  certificate    Boolean        @default(false)
+  description    String?
+  status         ApprovalStatus @default(PENDING)
+  reviewNote     String?
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  enrollments CourseEnrollment[]
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  COMPLETED
+  DROPPED
+}
+
+model CourseEnrollment {
+  id          String           @id @default(cuid())
+  courseId    String
+  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  status      EnrollmentStatus @default(ENROLLED)
+  enrolledAt  DateTime         @default(now())
+
+  @@unique([courseId, candidateId])
+}
+
+enum TrainingRequestStatus {
+  SUBMITTED
+  REVIEWING
+  COURSE_CREATED
+  FULFILLED
+  CLOSED
+}
+
+model TrainingRequest {
+  id                  String                 @id @default(cuid())
+  companyId           String
+  company             Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vacancyId           String?
+  vacancy             Vacancy?               @relation(fields: [vacancyId], references: [id], onDelete: SetNull)
+  occupation          String?
+  skillsNeeded        String?
+  germanLevelNeeded   String?
+  numberOfCandidates  String?
+  timeline            String?
+  notes               String?
+  status              TrainingRequestStatus  @default(SUBMITTED)
+  adminNote           String?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+}
+
+enum GuidanceStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
+model GuidanceRequest {
+  id           String         @id @default(cuid())
+  candidateId  String
+  candidate    CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  topic        String?
+  message      String
+  status       GuidanceStatus @default(OPEN)
+  response     String?
+  respondedBy  String?
+  respondedAt  DateTime?
+  createdAt    DateTime       @default(now())
+}
