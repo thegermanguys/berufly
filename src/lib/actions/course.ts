@@ -17,6 +17,9 @@ export async function createCourse(formData: FormData) {
   }
 
   const data = collect(formData);
+  if (!data.title) {
+    redirect(`/educator/courses?err=${encodeURIComponent('A course title is required.')}`);
+  }
   const course = await prisma.course.create({
     data: {
       instructorId: educator!.id,
@@ -26,7 +29,8 @@ export async function createCourse(formData: FormData) {
       free: formData.get('free') === 'on',
       certificate: formData.get('certificate') === 'on',
       status: 'PENDING',
-      ...data
+      ...data,
+      title: data.title
     }
   });
 
@@ -50,7 +54,8 @@ export async function updateCourse(formData: FormData) {
       free: formData.get('free') === 'on',
       certificate: formData.get('certificate') === 'on',
       status: course!.status === 'NEEDS_CHANGES' ? 'PENDING' : course!.status,
-      ...data
+      ...data,
+      title: data.title ?? course.title
     }
   });
 
@@ -73,8 +78,10 @@ export async function enrollInCourse(formData: FormData) {
   redirect(`/courses?ok=${encodeURIComponent('Enrolled. Find it under My training.')}`);
 }
 
-function collect(formData: FormData) {
-  const out: Record<string, string | null> = {};
+type CourseFields = { [K in (typeof FIELDS)[number]]: string | null };
+
+function collect(formData: FormData): CourseFields {
+  const out = {} as CourseFields;
   for (const key of FIELDS) out[key] = str(formData, key);
   return out;
 }

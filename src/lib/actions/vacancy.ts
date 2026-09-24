@@ -18,6 +18,9 @@ export async function createVacancy(formData: FormData) {
   }
 
   const data = collect(formData);
+  if (!data.title) {
+    redirect(`/company/vacancies?err=${encodeURIComponent('A vacancy title is required.')}`);
+  }
   const vac = await prisma.vacancy.create({
     data: {
       companyId: company!.id,
@@ -25,7 +28,8 @@ export async function createVacancy(formData: FormData) {
       germanLevel: str(formData, 'germanLevel'),
       trainingAvailable: formData.get('trainingAvailable') === 'on',
       status: 'PENDING',
-      ...data
+      ...data,
+      title: data.title
     }
   });
 
@@ -47,7 +51,8 @@ export async function updateVacancy(formData: FormData) {
       germanLevel: str(formData, 'germanLevel'),
       trainingAvailable: formData.get('trainingAvailable') === 'on',
       status: vac!.status === 'NEEDS_CHANGES' ? 'PENDING' : vac!.status,
-      ...data
+      ...data,
+      title: data.title ?? vac.title
     }
   });
 
@@ -65,8 +70,10 @@ export async function closeVacancy(formData: FormData) {
   redirect(`/company/vacancies/${vacancyId}?ok=${encodeURIComponent('Vacancy closed.')}`);
 }
 
-function collect(formData: FormData) {
-  const out: Record<string, string | null> = {};
+type VacancyFields = { [K in (typeof FIELDS)[number]]: string | null };
+
+function collect(formData: FormData): VacancyFields {
+  const out = {} as VacancyFields;
   for (const key of FIELDS) out[key] = str(formData, key);
   return out;
 }
